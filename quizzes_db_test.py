@@ -1,4 +1,3 @@
-from datetime import datetime
 import logging
 from quizzes_db import Message, QuizzesDb
 import tempfile
