@@ -2,7 +2,6 @@ import argparse
 import logging
 from quiz_http_server import QuizHttpServer
 from quizzes_db import QuizzesDb
-import telegram
 from telegram_quiz import TelegramQuiz
 from typing import List
 import sys
