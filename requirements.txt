@@ -1,2 +1,2 @@
-dataclasses==0.7 # For Python 3.6.
+dataclasses==0.6 # For Python 3.6.
 python-telegram-bot==12.5.1
