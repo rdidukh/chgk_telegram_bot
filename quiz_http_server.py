@@ -49,7 +49,7 @@ class QuizHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
         return {'ok': True}
 
     def do_POST(self):
-        server: QuizHttpServer = self.server
+        server: QuizHttpServer = self.server  # type: QuizHttpServer
         try:
             response = self._do_post(server)
             if response.get('ok'):
@@ -70,7 +70,7 @@ class QuizHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(json.dumps(response).encode('utf-8'))
 
     def log_message(self, format: str, *args):
-        server: QuizHttpServer = self.server
+        server: QuizHttpServer = self.server  # type: QuizHttpServer
         server.logger.info(format % tuple(args))
 
 

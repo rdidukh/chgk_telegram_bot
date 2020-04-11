@@ -3,6 +3,7 @@ import json
 import logging
 from quizzes_db import Message, QuizzesDb
 import telegram.ext
+import telegram.update
 from typing import Dict, Set
 
 
