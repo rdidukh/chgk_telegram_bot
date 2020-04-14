@@ -40,8 +40,6 @@ class BaseQuizRequestHandler(tornado.web.RequestHandler):
         self.add_header('Content-Type', 'application/json')
         self.write(json.dumps(response))
 
-    def log_exception(self):
-        sef
 
 class RootHandler(BaseQuizRequestHandler):
 
