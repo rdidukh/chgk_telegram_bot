@@ -12,7 +12,7 @@ class BaseQuizRequestHandler(tornado.web.RequestHandler):
         self.quiz = quiz
 
     def handle_quiz_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        pass
+        return {}
 
     def post(self):
         try:
