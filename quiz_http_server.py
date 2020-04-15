@@ -11,7 +11,7 @@ class BaseQuizRequestHandler(tornado.web.RequestHandler):
     def initialize(self, quiz: TelegramQuiz):
         self.quiz = quiz
 
-    def handle_quiz_request(self, request: Dict[str, Any]):
+    def handle_quiz_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         pass
 
     def post(self):
@@ -43,7 +43,7 @@ class BaseQuizRequestHandler(tornado.web.RequestHandler):
 
 class RootHandler(BaseQuizRequestHandler):
 
-    def handle_quiz_request(self, request: Dict[str, Any]):
+    def handle_quiz_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         command = request.get('command')
 
         if command == 'start_registration':
