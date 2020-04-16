@@ -44,7 +44,8 @@ class QuizDb:
             with db:
                 cursor = db.execute(
                     'SELECT update_id, quiz_id, question, team_id, answer, MAX(timestamp) FROM answers '
-                    'WHERE quiz_id = ? AND update_id > ? GROUP BY quiz_id, question, team_id', (quiz_id, update_id_greater_than))
+                    'WHERE quiz_id = ? AND update_id > ? GROUP BY quiz_id, question, team_id',
+                    (quiz_id, update_id_greater_than))
 
                 for (update_id, quiz_id, question, team_id, answer, timestamp) in cursor:
                     answers.append(Answer(update_id=update_id,
