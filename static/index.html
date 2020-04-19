@@ -24,18 +24,61 @@
     </style>
 </head>
 
+
+<!--
+class QuizStatus:
+    update_id: int
+    quiz_id: str
+    number_of_questions: int
+    language: str
+    question: Optional[int]
+    registration: bool
+    time: str = field(default=None, compare=False)
+
+
+    addTableRow(table, ["OK", status.ok])
+    addTableRow(table, ["Quiz", status.quiz_id])
+    addTableRow(table, ["Question", status.question_id])
+    addTableRow(table, ["Registration", status.is_registration])
+    addTableRow(table, ["Language", status.language])
+    addTableRow(table, ["Last updated", new Date()])
+-->
+
 <body onload="onLoad()">
     <h2>Status</h2>
+    <table id="status_table">
+        <tr>
+            <td>Quiz</td>
+            <td id='status_quiz_cell'></td>
+        </tr>
+        <tr>
+            <td>Language</td>
+            <td id='status_language_cell'></td>
+        </tr>
+        <tr>
+            <td>Question</td>
+            <td id='status_question_cell'></td>
+        </tr>
+        <tr>
+            <td>Registration</td>
+            <td id='status_registration_cell'></td>
+        </tr>
+        <tr>
+            <td>Last changed</td>
+            <td id='status_last_changed_cell'></td>
+        </tr>
+    </table>
     <table id="status"></table>
     <h2>Actions</h2>
-    <button class="action_button" id="start_registration_button" onclick="startRegistration()">Start registration</button>
-    <br/>
-    <button class="action_button" id="stop_registration_button" onclick="stopRegistration()">Stop registration</button>    
-    <br />    
+    <button class="action_button" id="start_registration_button" onclick="startRegistration()">Start
+        registration</button>
+    <br />
+    <button class="action_button" id="stop_registration_button" onclick="stopRegistration()">Stop registration</button>
+    <br />
     <button class="action_button" id="stop_question_button" onclick="stopQuestion()">Stop question</button>
-    <br/>
+    <br />
     <h2>Teams</h2>
-    <table id="teams"></table>
+    <table id="teams_table"></table>
     <br />
     <h2>Answers</h2>
     <table id="answers"></table>

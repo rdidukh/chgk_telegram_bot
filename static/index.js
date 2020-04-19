@@ -82,7 +82,7 @@ async function sendCommand(command, args) {
 
     try {
         data = JSON.parse(text)
-    } catch(e) {
+    } catch (e) {
         console.error('Response is not a valid JSON object.')
         console.log(text)
         throw 'Response is not a valid JSON object.'
@@ -146,6 +146,90 @@ function stopQuestion() {
     });
 }
 
+var lastSeenStatusUpdateId = 0
+var lastSeenTeamsUpdateId = 0
+var lastSeenAnswersUpdateId = 0
+var currentStatus = null
+var currentAnswers = null
+
+/*
+        <tr>
+            <td>Quiz</td>
+            <td id='status_quiz_cell'></td>
+        </tr>
+        <tr>
+            <td>Language</td>
+            <td id='status_language_cell'></td>
+        </tr>
+        <tr>
+            <td>Question</td>
+            <td id='status_question_cell'></td>
+        </tr>
+        <tr>
+            <td>Registration</td>
+            <td id='status_registration_cell'></td>
+        </tr>
+        <tr>
+            <td>Last changed</td>
+            <td id='status_last_changed_cell'></td>
+        </tr>
+*/
+
+function updateTextContent(elementId, newTextContent) {
+    const element = document.getElementById(elementId)
+    if (element.textContent != newTextContent) {
+        element.textContent = newTextContent
+    }
+}
+
+function handle {
+}
+
+function handleStatusUpdate(status) {
+    updateTextContent('status_quiz_cell', status.quiz_id)
+    updateTextContent('status_language_cell', status.language)
+    updateTextContent('status_question_cell', status.question)
+    updateTextContent('status_registration_cell', status.registration.toString())
+    updateTextContent('status_last_changed_cell', status.time)
+}
+
+function handleUpdates(updates) {
+    if (updates.status) {
+        lastSeenStatusUpdateId = updates.status.update_id
+        currentStatus = updates.status
+        handleStatusUpdate(updates.status)
+    }
+
+    for (const team of updates.teams) {
+        lastSeenTeamsUpdateId = Math.max(lastSeenTeamsUpdateId, team.update_id)
+        // TODO: update team index.
+        // team_id --> Team
+    }
+
+    for (const answer of updates.answers) {
+        lastSeenAnswersUpdateId = Math.max(lastSeenAnswersUpdateId, answer.update_id)
+        // TODO: update answers index.
+        // question --> team_id --> Answer
+    }
+
+    // TODO: update answers table.
+    for (team_id in teams) {
+
+    }
+}
+
+function getUpdates() {
+    sendCommand('getUpdates', {
+        'min_status_update_id': lastSeenStatusUpdateId + 1,
+        'min_teams_update_id': lastSeenTeamsUpdateId + 1,
+        'min_answers_update_id': lastSeenAnswersUpdateId + 1,
+    }).then((updates) => {
+        handleUpdates(updates)
+    }).catch((error) => {
+        console.error('Could not get updates: ' + error)
+    })
+}
+
 function onLoad() {
-    setInterval(getStatus, 1000)
+    setInterval(getUpdates, 1000)
 }
