@@ -151,29 +151,10 @@ var lastSeenTeamsUpdateId = 0
 var lastSeenAnswersUpdateId = 0
 var currentStatus = null
 var currentAnswers = null
+const teamsIndex = new Map() // team_id --> Team
+const answersIndex = new Map() // question --> team_id --> Answer
+var currentAnswersTableQuestion = 1
 
-/*
-        <tr>
-            <td>Quiz</td>
-            <td id='status_quiz_cell'></td>
-        </tr>
-        <tr>
-            <td>Language</td>
-            <td id='status_language_cell'></td>
-        </tr>
-        <tr>
-            <td>Question</td>
-            <td id='status_question_cell'></td>
-        </tr>
-        <tr>
-            <td>Registration</td>
-            <td id='status_registration_cell'></td>
-        </tr>
-        <tr>
-            <td>Last changed</td>
-            <td id='status_last_changed_cell'></td>
-        </tr>
-*/
 
 function updateTextContent(elementId, newTextContent) {
     const element = document.getElementById(elementId)
@@ -182,40 +163,100 @@ function updateTextContent(elementId, newTextContent) {
     }
 }
 
-function handle {
-}
-
-function handleStatusUpdate(status) {
-    updateTextContent('status_quiz_cell', status.quiz_id)
-    updateTextContent('status_language_cell', status.language)
-    updateTextContent('status_question_cell', status.question)
-    updateTextContent('status_registration_cell', status.registration.toString())
-    updateTextContent('status_last_changed_cell', status.time)
-}
-
 function handleUpdates(updates) {
-    if (updates.status) {
-        lastSeenStatusUpdateId = updates.status.update_id
-        currentStatus = updates.status
-        handleStatusUpdate(updates.status)
+    const status = updates.status
+    if (status) {
+        lastSeenStatusUpdateId = status.update_id
+        currentStatus = status
+        updateTextContent('status_quiz_cell', status.quiz_id)
+        updateTextContent('status_language_cell', status.language)
+        updateTextContent('status_question_cell', status.question)
+        updateTextContent('status_registration_cell', status.registration.toString())
+        updateTextContent('status_last_changed_cell', status.time)
     }
 
+    // Update teams index.
     for (const team of updates.teams) {
         lastSeenTeamsUpdateId = Math.max(lastSeenTeamsUpdateId, team.update_id)
-        // TODO: update team index.
-        // team_id --> Team
+        teamsIndex.set(team.id, team)
     }
 
+    // Update answers index.
     for (const answer of updates.answers) {
         lastSeenAnswersUpdateId = Math.max(lastSeenAnswersUpdateId, answer.update_id)
-        // TODO: update answers index.
-        // question --> team_id --> Answer
+        if (!answersIndex.has(answer.question)) {
+            answersIndex.set(answer.question, new Map())
+        }
+
+        answersIndex.get(answer.question).set(answer.team_id, answer)
     }
 
-    // TODO: update answers table.
-    for (team_id in teams) {
+    // TODO: what if the quiz id has changed?
+    // TODO: what if the number of questions has changed?
 
+    // Create the first row of the results table if it does not exist yet.
+    const resultsTable = document.getElementById('results_table')
+    if (resultsTable.rows.length == 0) {
+        const resultsTableHeaderRow = resultsTable.insertRow(0)
+        resultsTableHeaderRow.insertCell(-1)
+        resultsTableHeaderRow.insertCell(-1).textContent = 'Total'
+        for (let q = 1; q <= currentStatus.number_of_questions; q++) {
+            resultsTableHeaderRow.insertCell(-1).textContent = q
+        }
     }
+
+    // Update team names in the results table.
+    // TODO: Take only new teams/answers into account.
+    // TODO: iterate through new team updates only?
+    for (const team of updates.teams) {
+        const resultsTeamRowId = 'results_team_' + team.id + '_row'
+        var resultsTeamRow = document.getElementById(resultsTeamRowId)
+        if (!resultsTeamRow) {
+            resultsTeamRow = resultsTable.insertRow(-1)
+            resultsTeamRow.id = resultsTeamRowId
+
+            resultsTeamRow.insertCell(-1)
+            resultsTeamRow.insertCell(-1)
+            for (let q = 1; q <= currentStatus.number_of_questions; q++) {
+                resultsTeamRow.insertCell(-1).textContent = '0'
+            }
+        }
+        // TODO: make it a function.
+        if (resultsTeamRow.cells[0].textContent != team.name) {
+            resultsTeamRow.cells[0].textContent = team.name
+        }
+    }
+
+    // Update team names in the answers table.
+    const answersTable = document.getElementById('answers_table')
+    for (const team of updates.teams) {
+        const answersTeamRowId = 'answers_team_' + team.id + '_row'
+        var answersTeamRow = document.getElementById(answersTeamRowId)
+        if (!answersTeamRow) {
+            answersTeamRow = answersTable.insertRow(-1)
+            answersTeamRow.id = answersTeamRowId
+            answersTeamRow.insertCell(-1).textContent = team.name
+            answersTeamRow.insertCell(-1)
+            answersTeamRow.insertCell(-1)
+            answersTeamRow.insertCell(-1)
+        }
+        if (answersTeamRow.cells[0].textContent != team.name) {
+            answersTeamRow.cells[0].textContent = team.name
+        }
+    }
+
+
+
+    /*
+    <table id='asnwers_table'>
+        <tr id='answers_team_<team_id>_row'>
+            <td>Team Name</td>
+            <td>Answer</td>
+            <td><button>Correct</button></td>
+            <td><button>Incorrect</incorrect></td>
+        </tr>
+    </table>
+    */
 }
 
 function getUpdates() {
@@ -225,9 +266,10 @@ function getUpdates() {
         'min_answers_update_id': lastSeenAnswersUpdateId + 1,
     }).then((updates) => {
         handleUpdates(updates)
-    }).catch((error) => {
-        console.error('Could not get updates: ' + error)
     })
+    // .catch((error) => {
+    //     console.error('Could not get updates: ' + error)
+    // })
 }
 
 function onLoad() {
