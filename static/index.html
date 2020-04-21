@@ -29,23 +29,23 @@
     <table id="status_table">
         <tr>
             <td>Quiz</td>
-            <td id='status_quiz_cell'></td>
+            <td></td>
         </tr>
         <tr>
             <td>Language</td>
-            <td id='status_language_cell'></td>
+            <td></td>
         </tr>
         <tr>
             <td>Question</td>
-            <td id='status_question_cell'></td>
+            <td></td>
         </tr>
         <tr>
             <td>Registration</td>
-            <td id='status_registration_cell'></td>
+            <td></td>
         </tr>
         <tr>
             <td>Last changed</td>
-            <td id='status_last_changed_cell'></td>
+            <td></td>
         </tr>
     </table>
 
@@ -54,12 +54,13 @@
 
     <table id="status"></table>
     <h2>Actions</h2>
-    <button class="action_button" id="start_registration_button" onclick="startRegistration()">Start
+    <button class="action_button" id="start_registration_button" onclick="api.startRegistration()">Start
         registration</button>
     <br />
-    <button class="action_button" id="stop_registration_button" onclick="stopRegistration()">Stop registration</button>
+    <button class="action_button" id="stop_registration_button" onclick="api.stopRegistration()">Stop
+        registration</button>
     <br />
-    <button class="action_button" id="stop_question_button" onclick="stopQuestion()">Stop question</button>
+    <button class="action_button" id="stop_question_button" onclick="api.stopQuestion()">Stop question</button>
     <br />
 
     <h2>Answers</h2>

@@ -1,66 +1,102 @@
-async function sendCommand(command, args) {
-    const response = await fetch("/api/" + command, {
-        method: "POST",
-        body: JSON.stringify(args),
-        headers: { "Content-Type": "application/json" },
-    })
-
-    text = await response.text()
-
-    try {
-        data = JSON.parse(text)
-    } catch (e) {
-        console.error('Response is not a valid JSON object.')
-        console.log(text)
-        throw 'Response is not a valid JSON object.'
+class Api {
+    constructor(fetcher) {
+        this.fetcher = fetcher
     }
 
-    if (response.status !== 200) {
-        throw data.error;
+    async callServer(command, args = {}) {
+        const response = await this.fetcher('/api/' + command, {
+            method: 'POST',
+            body: JSON.stringify(args),
+            headers: { 'Content-Type': 'application/json' },
+        })
+
+        const text = await response.text()
+
+        try {
+            var data = JSON.parse(text)
+        } catch (e) {
+            console.error('Response is not a valid JSON object.')
+            console.log(text)
+            throw 'Response is not a valid JSON object.'
+        }
+
+        if (response.status !== 200) {
+            throw data.error;
+        }
+
+        return data;
     }
-    return data;
+
+    async getUpdates(minStatusUpdateId, minTeamsUpdateId, minAnswersUpdateId) {
+        const response = await this.callServer('getUpdates', {
+            min_status_update_id: minStatusUpdateId,
+            min_teams_update_id: minTeamsUpdateId,
+            min_answers_update_id: minAnswersUpdateId,
+        })
+
+        return response
+    }
+
+    async startRegistration() {
+        try {
+            await this.callServer('startRegistration')
+            console.log('Registration started!')
+        } catch (error) {
+            console.warn('Could not start registration: ' + error)
+        }
+    }
+
+    async stopRegistration() {
+        try {
+            await this.callServer('stopRegistration')
+            console.log('Registration stopped!')
+        } catch (error) {
+            console.warn('Could not stop registration: ' + error)
+        }
+    }
+
+    async startQuestion(question) {
+        if (question < 10) {
+            var questionId = '0' + question.toString()
+        } else {
+            var questionId = question.toString()
+        }
+
+        try {
+            await this.callServer('startQuestion', { 'question_id': questionId })
+            console.log('Question ' + question + 'started!')
+        } catch (error) {
+            console.warn('Could not start question ' + question + ': ' + error)
+        }
+    }
+
+    async stopQuestion() {
+        try {
+            await this.callServer('stopQuestion')
+            console.log('Question stopped!')
+        } catch (error) {
+            console.warn('Could not stop question: ' + error)
+        }
+    }
 }
 
-function startRegistration() {
-    sendCommand("startRegistration", {}).then((response) => {
-        console.log("Registration started!")
-    }).catch((error) => {
-        console.warn("Could not start registration: " + error)
-    });
-}
-
-function stopRegistration() {
-    sendCommand("stopRegistration", {}).then((response) => {
-        console.log('Registration stopped!')
-    }).catch((error) => {
-        console.warn('Could not stop registration: ' + error)
-    });
-}
-
-function stopQuestion() {
-    sendCommand("stopQuestion", {}).then((response) => {
-        console.log("Question stopped!")
-    }).catch((error) => {
-        console.warn("Could not stop question: " + error)
-    });
-}
-
-function updateTextContent(elementId, newTextContent) {
-    const element = document.getElementById(elementId)
+function updateTextContent(element, newTextContent) {
     if (element.textContent != newTextContent) {
         element.textContent = newTextContent
     }
 }
 
-
 class QuizController {
-    constructor(document, numberOfQuestions) {
+    constructor(document, api) {
         this.document = document
-        this.numberOfQuestions = numberOfQuestions
-        this.status = null
-        this.teamsIndex = new Map() // teamId -> Team
-        this.answersIndex = new Map() // question -> teamId -> Answer
+        this.api = api
+        this.numberOfQuestions = 30
+        // teamId -> Team.
+        this.teamsIndex = new Map()
+        // question -> teamId -> Answer
+        this.answersIndex = new Map()
         this.currentQuestion = 1
+        this.lastSeenStatusUpdateId = 0
         this.lastSeenTeamsUpdateId = 0
         this.lastSeenAnswersUpdateId = 0
     }
@@ -70,11 +106,12 @@ class QuizController {
     }
 
     updateStatusTable(status) {
-        updateTextContent('status_quiz_cell', status.quiz_id)
-        updateTextContent('status_language_cell', status.language)
-        updateTextContent('status_question_cell', status.question)
-        updateTextContent('status_registration_cell', status.registration.toString())
-        updateTextContent('status_last_changed_cell', status.time)
+        const table = this.document.getElementById('status_table')
+        updateTextContent(table.rows[0].cells[1], status.quiz_id)
+        updateTextContent(table.rows[1].cells[1], status.language)
+        updateTextContent(table.rows[2].cells[1], status.question)
+        updateTextContent(table.rows[3].cells[1], status.registration.toString())
+        updateTextContent(table.rows[4].cells[1], status.time)
     }
 
     initResultsTable() {
@@ -95,17 +132,11 @@ class QuizController {
             resultsTableHeaderRow.insertCell(-1).textContent = question
             const startQuestionButton = this.document.createElement('button')
             startQuestionButton.textContent = '>'
-            startQuestionButton.onclick = () => {
-                sendCommand("startQuestion", { "question_id": '0' + question.toString() }).then((response) => {
-                    console.log("Question '" + question + "' started!")
-                }).catch((error) => {
-                    console.warn("Could not start question: " + error)
-                });
-            }
+            startQuestionButton.onclick = () => { this.api.startQuestion(question) }
 
             const showAnswersButton = this.document.createElement('button')
             showAnswersButton.textContent = 'A'
-            showAnswersButton.onclick = () => { this.showAnswersForQuestion(question) }
+            showAnswersButton.onclick = async () => { this.showAnswersForQuestion(question) }
 
             resultsStartQuestionRow.insertCell(-1).appendChild(startQuestionButton)
             showAnswersRow.insertCell(-1).appendChild(showAnswersButton)
@@ -113,11 +144,11 @@ class QuizController {
     }
 
     updateResultsTable() {
-        const table = document.getElementById('results_table')
+        const table = this.document.getElementById('results_table')
 
-        for (const [teamId, team] of teamsIndex) {
+        for (const [teamId, team] of this.teamsIndex) {
             const rowId = 'results_team_' + teamId + '_row'
-            var row = document.getElementById(rowId)
+            var row = this.document.getElementById(rowId)
             if (!row) {
                 row = table.insertRow(-1)
                 row.id = rowId
@@ -128,10 +159,7 @@ class QuizController {
                     row.insertCell(-1).textContent = '0'
                 }
             }
-            // TODO: make it a function.
-            if (row.cells[0].textContent != team.name) {
-                row.cells[0].textContent = team.name
-            }
+            updateTextContent(row.cells[0], team.name)
         }
     }
 
@@ -168,84 +196,67 @@ class QuizController {
                 var answerText = answers.get(teamId).answer
             }
 
-            // TODO: make it a function 
-            if (row.cells[0].textContent != team.name) {
-                row.cells[0].textContent = team.name
-            }
-
-            // TODO: make it a function
-            if (row.cells[1].textContent != answerText) {
-                row.cells[1].textContent = answerText
-            }
+            updateTextContent(row.cells[0], team.name)
+            updateTextContent(row.cells[1], answerText)
         }
     }
 
     updateQuiz(updates) {
         if (updates.status) {
-            // TODO: what if the quiz id has changed?
-            // TODO: what if the number of questions has changed?
-            currentStatus = updates.status
-            console.log('Status update received.')
-            updateStatusTable(updates.status)
+            this.lastSeenStatusUpdateId = updates.status.update_id
+            console.log('Status update received. update_id: ' + updates.status.update_id)
+            this.updateStatusTable(updates.status)
         }
 
         // Update teams index.
         for (const team of updates.teams) {
-            lastSeenTeamsUpdateId = Math.max(lastSeenTeamsUpdateId, team.update_id)
-            teamsIndex.set(team.id, team)
+            this.lastSeenTeamsUpdateId = Math.max(this.lastSeenTeamsUpdateId, team.update_id)
+            this.teamsIndex.set(team.id, team)
             console.log('Team update received. Name: "' + team.name + '". Id: ' + team.id)
         }
 
         // Update answers index.
         for (const answer of updates.answers) {
-            lastSeenAnswersUpdateId = Math.max(lastSeenAnswersUpdateId, answer.update_id)
-            if (!answersIndex.has(answer.question)) {
-                answersIndex.set(answer.question, new Map())
+            this.lastSeenAnswersUpdateId = Math.max(this.lastSeenAnswersUpdateId, answer.update_id)
+            if (!this.answersIndex.has(answer.question)) {
+                this.answersIndex.set(answer.question, new Map())
             }
-            answersIndex.get(answer.question).set(answer.team_id, answer)
-            console.log('Answer update received. Question: ' + answer.question + '. Team Id: ' + answer.team_id + '. Answer: "' + answer.answer + '"')
+            this.answersIndex.get(answer.question).set(answer.team_id, answer)
+            console.log('Answer update received. Question: ' + answer.question +
+                '. Team Id: ' + answer.team_id + '. Answer: "' + answer.answer + '"')
         }
 
-        updateResultsTable()
-        updateAnswersTable(document, teamsIndex, answersIndex, document)
+        this.updateResultsTable()
+        this.updateAnswersTable()
     }
 
     getUpdates() {
-        sendCommand('getUpdates', {
-            'min_status_update_id': currentStatus.update_id + 1,
-            'min_teams_update_id': lastSeenTeamsUpdateId + 1,
-            'min_answers_update_id': lastSeenAnswersUpdateId + 1,
-        }).then((updates) => {
-            controller.update(updates)
+        this.api.getUpdates(
+            this.lastSeenStatusUpdateId + 1,
+            this.lastSeenTeamsUpdateId + 1,
+            this.lastSeenAnswersUpdateId + 1
+        ).then((updates) => {
+            this.updateQuiz(updates)
         })
-        // .catch((error) => {
-        //     console.error('Could not get updates: ' + error)
-        // })
     }
 
     listenToServer() {
-        setInterval(this.getUpdates, 1000)
+        setInterval(this.getUpdates.bind(this), 1000)
     }
 }
 
-/*
-function updateTextContent(element, newTextContent) {
-    if (element.textContent != newTextContent) {
-        element.textContent = newTextContent
-    }
-}
-*/
-
-var controller = null
+var api = null
 
 function onLoad() {
-    const controller = new QuizController(document)
+    api = new Api(fetch.bind(window))
+    const controller = new QuizController(document, api)
+    controller.init()
     controller.listenToServer()
 }
 
 if (typeof window === 'undefined') {
     module.exports = {
+        Api: Api,
         QuizController: QuizController,
-        //updateAnswersTable: updateAnswersTable,
     }
 }
