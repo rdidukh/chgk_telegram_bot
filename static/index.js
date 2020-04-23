@@ -184,7 +184,7 @@ class QuizController {
                     var points = null
                 }
 
-                if (points !== null) {
+                if (points != null) {
                     totalPoints += points
                 }
 
