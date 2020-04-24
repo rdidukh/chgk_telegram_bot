@@ -251,6 +251,7 @@ class TelegramQuiz:
             self._on_status_update()
 
     def stop(self):
+        # TODO: clean up updater handlers.
         with self._lock:
             self.updater.stop()
             self._on_status_update()
