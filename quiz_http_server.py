@@ -23,12 +23,12 @@ class BaseQuizRequestHandler(tornado.web.RequestHandler):
     def initialize(self, quiz: TelegramQuiz):
         self.quiz = quiz
 
-    def get_param_value(self, request: Dict[str, Any], param: str, param_type: Type, default_value: Optional[Any] = None) -> Any:
+    def get_param_value(self, request: Dict[str, Any], param: str, param_type: Type, default: Optional[Any] = None) -> Any:
         if param not in request:
-            if default_value is None:
+            if default is None:
                 raise RequestParameterError(
                     f'Parameter {param} must be provided.')
-            return default_value
+            return default
         value = request[param]
         if not isinstance(value, param_type):
             raise RequestParameterError(
@@ -102,7 +102,8 @@ class GetUpdatesApiHandler(BaseQuizRequestHandler):
             request, 'min_teams_update_id', int)
         min_answers_update_id = self.get_param_value(
             request, 'min_answers_update_id', int)
-        timeout = self.get_param_value(request, 'timeout', int, 0)
+        timeout = self.get_param_value(request, 'timeout', float, 0.0)
+        timeout = min(timeout, 30.0)
 
         updates = self._get_updates(
             min_status_update_id, min_teams_update_id, min_answers_update_id)
