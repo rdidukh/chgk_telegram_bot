@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 import logging
 from quiz_db import Answer, Message, QuizDb, Team
+import telegram
 import telegram.ext
 import telegram.update
 import threading
