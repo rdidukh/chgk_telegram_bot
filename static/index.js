@@ -102,13 +102,15 @@ export class QuizController {
         for (let r = 0; r < table.rows.length; r++) {
             for (let c = 2; c < table.rows[r].cells.length; c++) {
                 if (this.currentQuestion + 1 === c) {
-                    table.rows[r].cells[c].style.backgroundColor = 'lightyellow'
+                    table.rows[r].cells[c].classList.add('current_question')
                 } else {
-                    table.rows[r].cells[c].style.backgroundColor = ''
+                    table.rows[r].cells[c].classList.remove('current_question')
                 }
 
                 if (this.runningQuestion + 1 === c) {
-                    table.rows[r].cells[c].style.backgroundColor = 'lightpink'
+                    table.rows[r].cells[c].classList.add('running_question')
+                } else {
+                    table.rows[r].cells[c].classList.remove('running_question')
                 }
             }
         }
@@ -162,9 +164,9 @@ export class QuizController {
     highlightQuestionHeader() {
         const header = this.document.getElementById('question_header')
         if (this.currentQuestion === this.runningQuestion) {
-            header.style.backgroundColor = 'lightpink'
+            header.classList.add('running_question')
         } else {
-            header.style.backgroundColor = ''
+            header.classList.remove('running_question')
         }
     }
 
