@@ -42,6 +42,7 @@ def _updater_factory(bot_api_token: str) -> telegram.ext.Updater:
     updater.stop = MagicMock()
     return updater
 
+
 class StartedQuizBaseTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -77,7 +78,6 @@ class StartTest(BaseTestCase):
 
         self.assertEqual(update_id, self.quiz.status_update_id)
         sub.assert_not_called()
-
 
     def test_drops_old_handlers_on_restart(self):
         self.quiz.start(quiz_id='test', bot_api_token='123:TOKEN', language='lang',
