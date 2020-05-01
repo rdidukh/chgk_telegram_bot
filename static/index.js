@@ -130,9 +130,7 @@ export class QuizController {
                 row = table.insertRow()
                 row.id = rowId
 
-                row.insertCell()
-                row.insertCell()
-                for (let q = 1; q <= this.numberOfQuestions; q++) {
+                for (let q = 1; q <= this.numberOfQuestions + 2; q++) {
                     row.insertCell()
                 }
             }
